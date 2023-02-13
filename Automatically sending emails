@@ -1,0 +1,55 @@
+const firstEmailDaysThreshold = 7;
+const secondEmailDaysThreshold = 11;
+const thirdEmailDaysThreshold = 15;
+
+function sendEmail2() {
+  var orders = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('List 3');
+
+  var numOfOrders = orders.getLastRow(); 
+
+  for (var i = 2; i < numOfOrders +1; i++) {
+    var lastReminderDate = Date.parse(orders.getRange(i,6).getValue()); 
+
+    if (!lastReminderDate) { // mail zatim nebyl odeslan, pokud bude tak se zmeni na jiny sloupec
+      lastReminderDate = Date.parse(orders.getRange(i,1).getValue());
+    }
+
+    var today = new Date();                              
+    var isPaid = orders.getRange(i,8).getValue();
+    
+    const diffTime = Math.abs(today - lastReminderDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // rozdil ve dnich 
+
+    if (!isPaid) { // kdyz isPaid neni nulove 
+      var numOfEmailsSent = orders.getRange(i,7); 
+
+      if (numOfEmailsSent.getValue() == 0 && diffDays > firstEmailDaysThreshold) {
+        // pass
+      } else {
+          if (!(diffDays > thirdEmailDaysThreshold || diffDays > secondEmailDaysThreshold || diffDays > firstEmailDaysThreshold)) {
+            continue;
+          } 
+      }      
+
+      var emailAddress = orders.getRange(i,5).getValue();
+      var emailReminderSentDate = orders.getRange(i,6); // export do sloupce datum 
+      var newNumOfEmailsSent = numOfEmailsSent.getValue() + 1;
+      var subject = "Reminder " + newNumOfEmailsSent;
+
+      const agent = orders.getRange(i,2).getValue();
+      const amount = orders.getRange(i,3).getValue();
+      const estate = orders.getRange(i,4).getValue();
+
+      const message = "Obchodník: " + agent + "\nČastka: " + amount + "\nPozemek: " + estate + "\nCislo mailu: " + newNumOfEmailsSent;
+
+      MailApp.sendEmail(emailAddress, subject, message);
+      
+      emailReminderSentDate.setValue(today);
+
+      numOfEmailsSent.setValue(newNumOfEmailsSent);
+    }
+
+    }
+
+  }
+
